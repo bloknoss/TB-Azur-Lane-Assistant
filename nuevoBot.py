@@ -13,7 +13,7 @@ def getShipSkins(shipURL):
     doc = BeautifulSoup(resp, "html.parser")
     mainWindow = doc.find('section', class_='tabber__section').find_all(recursive=False)
     [print(skin['data-title']) for skin in mainWindow]
-        #print(skin.find('div', class_='shipskin'))
+        #print(skin.find('div', class_='shipskin')) 
     for skin in mainWindow:
         print(parseSRCSET(skin.find('div', class_='shipskin-image').find('img')['srcset']))
 
