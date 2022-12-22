@@ -8,7 +8,7 @@ client = commands.Bot(command_prefix='tb!',intents=discord.Intents.all())
 
 @client.event
 async def on_ready():
-    await client.tree.sync(guild=discord.Object(id=894565901532291143))
+    await client.tree.sync()
     print("TB has connected to Discord succesfully.")
 
 async def load():

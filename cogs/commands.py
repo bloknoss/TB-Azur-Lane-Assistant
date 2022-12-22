@@ -13,10 +13,10 @@ class Commands(commands.Cog):
         print("Commands have been loaded succesfully")
 
     @app_commands.command(name='info', description='Retrieve the ship\'s information from the database.',)
-    async def test(self, ctx: discord.Interaction, name: str):
+    async def info(self, ctx: discord.Interaction, name: str):
         ship = AzurLaneTB(f'https://azurlane.koumakan.jp/wiki/{name}')
         embed = discord.Embed(title=ship.fullname)
-        embed.set_image(url=ship.image)
+        embed.set_footer(text="Sources:\nAzur Lane English Wiki\nAzur Lane's EN Community Tier List")
         for cat in ship.info['categories']:
             if cat["category"] != 'Full Name' and cat["category"] != "Image":
                 embed.add_field(name=cat["category"], value=cat["value"],inline=False)
