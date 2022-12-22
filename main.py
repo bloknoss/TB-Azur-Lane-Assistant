@@ -1,4 +1,6 @@
-from AzurLane import *
+from AzurLane import AzurLaneTB
+import json
+import sys
 
 if __name__ == '__main__':
     userInput = sys.argv[1]

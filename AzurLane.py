@@ -37,8 +37,14 @@ class AzurLaneTB:
     def getInfo(self):
         infoDict = {"categories": []}
         mainCard = self.main.find('div', class_='ship-card-content')
-        shipFullName = mainCard.find(
+        fullName = mainCard.find(
             'div', class_='card-headline').find('span').text
+        image = self.fixSource(self.main.find(
+            'div', class_='adaptive-ratio-img').find("img")['srcset'])
+        infoDict['categories'].append(
+            {"category": "Full Name", "value": fullName})
+        infoDict['categories'].append({"category": "Image", "value": image})
+        
         mainCardInfo = mainCard.find('div', class_='card-info').find('tbody')
         infoElements = mainCardInfo.find_all('tr')
 
