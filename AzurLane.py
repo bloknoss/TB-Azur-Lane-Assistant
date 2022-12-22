@@ -11,10 +11,12 @@ class AzurLaneTB:
         self.skins = self.getShipSkins()
         self.skills = self.getSkills()
 
+
     def getScrappedInfo(self):
         resp = requests.get(self.URL).text
         doc = BeautifulSoup(resp, "html.parser")
         return doc
+
 
     def getShipSkins(self):
         skinsDict = {"skins": []}
@@ -32,6 +34,7 @@ class AzurLaneTB:
 
         return skinsDict
 
+
     def getInfo(self):
         mainCard = self.main.find('div', class_='ship-card-content')
         shipFullName = mainCard.find(
@@ -46,6 +49,7 @@ class AzurLaneTB:
 
         return 'Done'
 
+
     def getSkills(self):
         skillsTable = self.main.find('table', class_='ship-skills wikitable')
         skillsTR = skillsTable.find_all('tr')[1:]
@@ -54,6 +58,7 @@ class AzurLaneTB:
                 print(self.fixSource(skill.find('img')['srcset']))
                 print(skill.find_all('td')[1].find('b').text)
                 print(skill.find_all('td')[2].text.strip() + '\n')
+
 
     def fixSource(self, src):
         splitted = src.split(' ')
