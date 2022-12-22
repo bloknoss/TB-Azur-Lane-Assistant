@@ -1,11 +1,31 @@
-from AzurLane import AzurLaneTB
+from discord.ext import commands
+import discord
+import asyncio
+import os
 import json
-import sys
+
+client = commands.Bot(command_prefix='tb!',intents=discord.Intents.all())
+
+@client.event
+async def on_ready():
+    await client.tree.sync(guild=discord.Object(id=894565901532291143))
+    print("TB has connected to Discord succesfully.")
+
+async def load():
+    for filename in os.listdir('./cogs'):
+        if filename.endswith(".py"):
+            await client.load_extension(f'cogs.{filename[:-3]}')
+    
+
+async def main(token):
+    async with client:
+        await load()
+        await client.start(token)
+
 
 if __name__ == '__main__':
-    userInput = sys.argv[1]
-    localDB = AzurLaneTB(userInput)
-    print(localDB.name + '\n')
-    print(json.dumps(localDB.info, indent=4))
-    print(json.dumps(localDB.skills, indent=4))
-    print(json.dumps(localDB.skins, indent=4))
+    config = open('config.json')
+    data = json.load(config)
+    config.close()
+    token = data['token']
+    asyncio.run(main(token=token))

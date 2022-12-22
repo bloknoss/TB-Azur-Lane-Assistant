@@ -4,12 +4,19 @@ import requests
 
 class AzurLaneTB:
     def __init__(self, shipURL) -> None:
-        self.URL = shipURL
-        self.main = self.getScrappedDoc()
-        self.info = self.getInfo()
-        self.name = self.getName()
-        self.skins = self.getSkins()
-        self.skills = self.getSkills()
+        try:
+            self.URL = shipURL
+            self.main = self.getScrappedDoc()
+            self.info = self.getInfo()
+            self.fullname = self.getFullname()
+            self.image = self.getImage()
+            self.name = self.getName()
+            self.skins = self.getSkins()
+            self.skills = self.getSkills()
+        except Exception as e:
+            print(e.with_traceback())
+            
+            
 
     def getScrappedDoc(self):
         resp = requests.get(self.URL).text
@@ -18,6 +25,10 @@ class AzurLaneTB:
 
     def getName(self):
         return self.main.find('span', class_='mw-page-title-main').text.strip()
+
+    def getFullname(self):
+        return self.main.find('div', class_='ship-card-content').find(
+            'div', class_='card-headline').find('span').text.strip()
 
     def getSkins(self):
         skinsDict = {"skins": []}
@@ -34,17 +45,23 @@ class AzurLaneTB:
 
         return skinsDict
 
+    def getImage(self):
+        return self.fixSource(self.main.find('div', class_='azl_box_body').find("img")['srcset'])
+
     def getInfo(self):
         infoDict = {"categories": []}
         mainCard = self.main.find('div', class_='ship-card-content')
         fullName = mainCard.find(
             'div', class_='card-headline').find('span').text
         image = self.fixSource(self.main.find(
-            'div', class_='adaptive-ratio-img').find("img")['srcset'])
+            'div', class_='azl_box_body').find("img")['srcset'])
+        retrofit = self.main.find(text='Retrofit') != None
+
         infoDict['categories'].append(
             {"category": "Full Name", "value": fullName})
         infoDict['categories'].append({"category": "Image", "value": image})
-        
+        infoDict['categories'].append(
+            {"category": "Retrofit", "value": "Available" if retrofit == True else "Unavailable"})
         mainCardInfo = mainCard.find('div', class_='card-info').find('tbody')
         infoElements = mainCardInfo.find_all('tr')
 
@@ -52,6 +69,8 @@ class AzurLaneTB:
             children = info.findChildren()
             catName = children[0].text.strip()
             catValue = children[-1].text.strip()
+            if catName == 'Rarity': 
+                catValue = catValue.replace('★','').strip()
             infoDict['categories'].append(
                 {'category': catName, "value": catValue})
 
