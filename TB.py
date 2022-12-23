@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+from tierlist.fetch_tl import infoRetrieval
 import requests
 
 
@@ -7,22 +8,25 @@ class AzurLaneTB:
         try:
             self.URL = shipURL
             self.main = self.getScrappedDoc()
-            self.info = self.getInfo()
-            self.fullname = self.getFullname()
-            self.image = self.getImage()
             self.name = self.getName()
+            self.fullname = self.getFullname()
+            self.info = self.getInfo()
+            self.image = self.getImage()
             self.skins = self.getSkins()
             self.skills = self.getSkills()
+            self.tier = self.getTier()
         except Exception as e:
             print(e.with_traceback())
-            
-            
 
     def getScrappedDoc(self):
         resp = requests.get(self.URL).text
         doc = BeautifulSoup(resp, "html.parser")
         return doc
 
+    def getTier(self):
+        tlInfo = infoRetrieval(self.name,"./tierlist/tierList.json")
+        return tlInfo.getTier()
+    
     def getName(self):
         return self.main.find('span', class_='mw-page-title-main').text.strip()
 
@@ -69,8 +73,8 @@ class AzurLaneTB:
             children = info.findChildren()
             catName = children[0].text.strip()
             catValue = children[-1].text.strip()
-            if catName == 'Rarity': 
-                catValue = catValue.replace('★','').strip()
+            if catName == 'Rarity':
+                catValue = catValue.replace('★', '').strip()
             infoDict['categories'].append(
                 {'category': catName, "value": catValue})
 
