@@ -15,6 +15,7 @@ class AzurLaneTB:
             self.skins = self.getSkins()
             self.skills = self.getSkills()
             self.tier = self.getTier()
+            self.color = self.getColor()
         except Exception as e:
             print(e.with_traceback())
 
@@ -24,9 +25,9 @@ class AzurLaneTB:
         return doc
 
     def getTier(self):
-        tlInfo = infoRetrieval(self.name,"./tierlist/tierList.json")
+        tlInfo = infoRetrieval(self.name, "./tierlist/tierList.json")
         return tlInfo.getTier()
-    
+
     def getName(self):
         return self.main.find('span', class_='mw-page-title-main').text.strip()
 
@@ -75,6 +76,7 @@ class AzurLaneTB:
             catValue = children[-1].text.strip()
             if catName == 'Rarity':
                 catValue = catValue.replace('★', '').strip()
+                self.rarity = catValue
             infoDict['categories'].append(
                 {'category': catName, "value": catValue})
 
@@ -93,6 +95,18 @@ class AzurLaneTB:
                     {"name": name, "description": description, "image": link})
 
         return skillsDict
+
+    def getColor(self):
+        if self.rarity == "Ultra Rare" or self.rarity == "Decisive":
+            return 0xe92063
+        elif self.rarity == "Super Rare" or self.rarity == "Priority":
+            return 0xffd900
+        elif self.rarity == "Elite":
+            return 0x800080
+        elif self.rarity == "Rare":
+            return 0x0000ff
+        elif self.rarity == "Common":
+            return 0x808080
 
     def fixSource(self, src):
         splitted = src.split(' ')
