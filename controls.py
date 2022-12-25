@@ -1,5 +1,5 @@
 import discord
-from tb import AzurLaneTB as TB
+from TB import AzurLaneTB as TB
 from datetime import datetime
 from utilities import generateSkinEmbed, generateSkillsEmbed, generateArtworksEmbed
 from discord.ext import commands
