@@ -1,27 +1,34 @@
 from discord.ext import commands
+from TB import AzurLaneTB
 import discord
+import logging
+from datetime import datetime
 import asyncio
 import os
 import json
 
-client = commands.Bot(command_prefix='tb!',intents=discord.Intents.all())
+client = commands.Bot(command_prefix='tb!', intents=discord.Intents.all())
+
+discord.utils.setup_logging(level=logging.INFO, root=False)
+
 
 @client.event
 async def on_ready():
     await client.tree.sync()
-    print("TB has connected to Discord succesfully.")
+    time_now = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
+    print(f"[{time_now}] TB has connected to Discord succesfully.")
+
 
 async def load():
     for filename in os.listdir('./cogs'):
         if filename.endswith(".py"):
             await client.load_extension(f'cogs.{filename[:-3]}')
-    
+
 
 async def main(token):
     async with client:
         await load()
         await client.start(token)
-
 
 if __name__ == '__main__':
     config = open('config.json')

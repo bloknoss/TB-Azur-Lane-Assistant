@@ -4,6 +4,7 @@ import requests
 
 
 class AzurLaneTB:
+
     def __init__(self, shipURL) -> None:
         try:
             self.URL = shipURL
@@ -11,8 +12,10 @@ class AzurLaneTB:
             self.name = self.getName()
             self.fullname = self.getFullname()
             self.info = self.getInfo()
+            self.shipyard = self.getShipyardIcon()
             self.image = self.getImage()
             self.skins = self.getSkins()
+            self.drops = self.getDrops()
             self.skills = self.getSkills()
             self.tier = self.getTier()
             self.color = self.getColor()
@@ -23,35 +26,6 @@ class AzurLaneTB:
         resp = requests.get(self.URL).text
         doc = BeautifulSoup(resp, "html.parser")
         return doc
-
-    def getTier(self):
-        tlInfo = infoRetrieval(self.name, "./tierlist/tierList.json")
-        return tlInfo.getTier()
-
-    def getName(self):
-        return self.main.find('span', class_='mw-page-title-main').text.strip()
-
-    def getFullname(self):
-        return self.main.find('div', class_='ship-card-content').find(
-            'div', class_='card-headline').find('span').text.strip()
-
-    def getSkins(self):
-        skinsDict = {"skins": []}
-        resp = requests.get(f'{self.URL}/Gallery').text
-        doc = BeautifulSoup(resp, "html.parser")
-        mainWindow = doc.find(
-            'section', class_='tabber__section').find_all(recursive=False)
-        for skin in mainWindow:
-            image = skin.find('div', class_='shipskin-image').find('img')
-            if image != None:
-                name = skin['data-title']
-                link = self.fixSource(src=image['srcset'].strip())
-                skinsDict["skins"].append({"name": name, "url": link})
-
-        return skinsDict
-
-    def getImage(self):
-        return self.fixSource(self.main.find('div', class_='azl_box_body').find("img")['srcset'])
 
     def getInfo(self):
         infoDict = {"categories": []}
@@ -82,19 +56,88 @@ class AzurLaneTB:
 
         return infoDict
 
+    def getShipyardIcon(self):
+        return self.main.find('img')['src']
+
+    def getTier(self):
+        tlInfo = infoRetrieval(self.name, "./tierlist/tierList.json")
+        return tlInfo.getTier()
+
+    def getName(self):
+        return self.main.find('span', class_='mw-page-title-main').text.strip()
+
+    def getFullname(self):
+        return self.main.find('div', class_='ship-card-content').find(
+            'div', class_='card-headline').find('span').text.strip()
+
+    def getSkins(self):
+        skinsDict = {"skins": []}
+        resp = requests.get(f'{self.URL}/Gallery').text
+        doc = BeautifulSoup(resp, "html.parser")
+        mainWindow = doc.find(
+            'section', class_='tabber__section').find_all(recursive=False)
+        self.chibi = mainWindow[0].find('img', alt='Chibi')['src']
+
+        for skin in mainWindow:
+            image = skin.find('div', class_='shipskin-image').find('img')
+            if image != None:
+                name = skin['data-title']
+                chibi = skin.find('img', alt='Chibi')['src']
+                link = self.fixSource(src=image['srcset'].strip())
+                info_table = skin.find("table", class_='wikitable shipskin-table').find('tbody').find_all('tr')
+                skin_info = []
+
+                for tr in info_table:
+                    tds = tr.find_all("td")
+                    if len(tds) > 1:
+                        skin_info.append({"category":tr.find('th').text.strip(),"value":tr.find('td').text.strip()})
+                        skin_info.append({"category":"Availability","value":tr.find_all('td')[1].text.strip()})        
+                    else:                      
+                        skin_info.append({"category":tr.find('th').text.strip(),"value":tr.find('td').text.strip()})
+
+                skinsDict["skins"].append(
+                    {"name": name, "url": link, "chibi": chibi,"info":skin_info})
+
+        return skinsDict
+
+    def getImage(self):
+        return self.fixSource(self.main.find('div', class_='azl_box_body').find("img")['srcset'])
+
     def getSkills(self):
-        skillsDict = {"skills": []}
+        skillsDict =  []
         skillsTable = self.main.find('table', class_='ship-skills wikitable')
         skillsElements = skillsTable.find_all('tr')[1:]
         for skill in skillsElements:
             if skill.find('b') != None:
                 name = skill.find_all('td')[1].find('b').text.strip()
                 description = skill.find_all('td')[2].text.strip()
+                color = self.getSkillColor(skill.find('td')['style'])
                 link = self.fixSource(skill.find('img')['srcset'])
-                skillsDict['skills'].append(
-                    {"name": name, "description": description, "image": link})
+                skillsDict.append(
+                    {"name": name, "description": description, "image": link,"color":color})
 
         return skillsDict
+
+    def getDrops(self):
+        maps = {"maps": [], "notes": []}
+        construct_table = self.main.find(
+            'table', class_='ship-construction wikitable')
+        if construct_table != None:
+            rows = construct_table.find_all("tr")[1:5]
+            dropNotes = construct_table.find_all(
+                "tr")[-1] if len(construct_table.find_all("tr")) > 5 else None
+            for i in range(len(rows)):
+                cols = rows[i].find_all('td', colspan=None, rowspan=None)
+                for j in range(len(cols)):
+                    colValue = cols[j].text.strip()
+                    if colValue != '-':
+                        maps["maps"].append(f'{j+1}-{i+1}')
+
+            if dropNotes != None:
+                [maps['notes'].append(note.text.strip())
+                 for note in dropNotes.find_all('td')]
+
+        return maps
 
     def getColor(self):
         if self.rarity == "Ultra Rare" or self.rarity == "Decisive":
@@ -108,6 +151,14 @@ class AzurLaneTB:
         elif self.rarity == "Common":
             return 0x808080
 
+    def getSkillColor(self,color:str):
+        if 'Pink' in color:
+            return 0xfa2953
+        elif 'Gold' in color:
+            return 0xffd900
+        elif 'DeepSkyBlue' in color:
+            return 0x85ceea
+    
     def fixSource(self, src):
         splitted = src.split(' ')
         splitted = splitted[len(splitted)-2].replace('thumb/', '')

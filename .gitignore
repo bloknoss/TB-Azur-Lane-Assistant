@@ -5,3 +5,4 @@ tierlist/tierList.json
 *.pyc
 **/__pycache__/
 __pycache__/
+discord.log
