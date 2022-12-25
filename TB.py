@@ -4,29 +4,36 @@ import requests
 
 
 class AzurLaneTB:
-
-    def __init__(self, shipURL) -> None:
-        try:
-            self.URL = shipURL
-            self.main = self.getScrappedDoc()
-            self.name = self.getName()
-            self.fullname = self.getFullname()
-            self.info = self.getInfo()
-            self.shipyard = self.getShipyardIcon()
-            self.image = self.getImage()
-            self.skins = self.getSkins()
-            self.drops = self.getDrops()
-            self.skills = self.getSkills()
-            self.tier = self.getTier()
-            self.color = self.getColor()
-        except Exception as e:
-            print(e.with_traceback())
-
-    def getScrappedDoc(self):
+    def __init__(self, shipURL):
+        #Defines the variables that will be accessed outside.
+        self.URL = shipURL
+        self.main = self.getScrappedWiki()
+        self.gallery = self.getScrappedGallery()
+        self.artworks = self.getArtworks()
+        self.name = self.getName()
+        self.fullname = self.getFullname()
+        self.info = self.getInfo()
+        self.shipyard = self.getShipyardIcon()
+        self.image = self.getImage()
+        self.skins = self.getSkins()
+        self.drops = self.getDrops()
+        self.skills = self.getSkills()
+        self.tier = self.getTier()
+        self.color = self.getColor()
+            
+    #Returns the scrapped main Wiki html content.
+    def getScrappedWiki(self):
         resp = requests.get(self.URL).text
         doc = BeautifulSoup(resp, "html.parser")
         return doc
+    
+    #Returns the scrapped gallery Wiki html content.
+    def getScrappedGallery(self):
+        resp = requests.get(f'{self.URL}/Gallery').text
+        doc = BeautifulSoup(resp, "html.parser")
+        return doc
 
+    #Scraps the main Wiki page to return the most important information of the ship.
     def getInfo(self):
         infoDict = {"categories": []}
         mainCard = self.main.find('div', class_='ship-card-content')
@@ -55,26 +62,12 @@ class AzurLaneTB:
                 {'category': catName, "value": catValue})
 
         return infoDict
-
-    def getShipyardIcon(self):
-        return self.main.find('img')['src']
-
-    def getTier(self):
-        tlInfo = infoRetrieval(self.name, "./tierlist/tierList.json")
-        return tlInfo.getTier()
-
-    def getName(self):
-        return self.main.find('span', class_='mw-page-title-main').text.strip()
-
-    def getFullname(self):
-        return self.main.find('div', class_='ship-card-content').find(
-            'div', class_='card-headline').find('span').text.strip()
-
+    
+    #Scraps the Gallery page of the ship and returns the skin's name, image, chibi, and information.
     def getSkins(self):
         skinsDict = {"skins": []}
-        resp = requests.get(f'{self.URL}/Gallery').text
-        doc = BeautifulSoup(resp, "html.parser")
-        mainWindow = doc.find(
+        gallery = self.gallery
+        mainWindow = gallery.find(
             'section', class_='tabber__section').find_all(recursive=False)
         self.chibi = mainWindow[0].find('img', alt='Chibi')['src']
 
@@ -82,7 +75,9 @@ class AzurLaneTB:
             image = skin.find('div', class_='shipskin-image').find('img')
             if image != None:
                 name = skin['data-title']
-                chibi = skin.find('img', alt='Chibi')['src']
+                chibi = skin.find('img', alt='Chibi')
+                if chibi != None:
+                    chibi = chibi['src']
                 link = self.fixSource(src=image['srcset'].strip())
                 info_table = skin.find("table", class_='wikitable shipskin-table').find('tbody').find_all('tr')
                 skin_info = []
@@ -100,9 +95,23 @@ class AzurLaneTB:
 
         return skinsDict
 
-    def getImage(self):
-        return self.fixSource(self.main.find('div', class_='azl_box_body').find("img")['srcset'])
-
+    #Scraps the Gallery page of the ship and returns every Artwork found in it.
+    def getArtworks(self):
+        gallery = self.gallery
+        artworks_list = []
+        artworks = gallery.find('div',class_='shipgirl-gallery')
+        if artworks == None:
+            return None
+        artwork_frames = artworks.find_all('div',class_='shipgirl-frame')
+        for frame in artwork_frames:
+            name = frame.find('div',class_='shipgirl-caption').text.strip()
+            image = self.fixSource(frame.find('div',class_='shipgirl-art').find('img')['srcset'])
+            artworks_list.append({'artwork':name, 'image':image})
+        
+        return artworks_list
+        
+        
+    #Scraps the skills table from the main Wiki page of the ship`.`
     def getSkills(self):
         skillsDict =  []
         skillsTable = self.main.find('table', class_='ship-skills wikitable')
@@ -118,6 +127,7 @@ class AzurLaneTB:
 
         return skillsDict
 
+    #Scraps the construction table to get the drops from this ship.
     def getDrops(self):
         maps = {"maps": [], "notes": []}
         construct_table = self.main.find(
@@ -139,6 +149,28 @@ class AzurLaneTB:
 
         return maps
 
+    #Gets the name and full name of the ship.    
+    def getName(self):
+        return self.main.find('span', class_='mw-page-title-main').text.strip()
+
+    def getFullname(self):
+        return self.main.find('div', class_='ship-card-content').find(
+            'div', class_='card-headline').find('span').text.strip()
+
+    #Returns the shipyards image on the Wiki page, since it's a smaller image of the ship it's used for the icon on the embed
+    def getShipyardIcon(self):
+        return self.main.find('img')['src']
+    #Returns the ship image from the Wiki page
+    def getImage(self):
+        return self.fixSource(self.main.find('div', class_='azl_box_body').find("img")['srcset'])
+    
+    #Calls the infoRetrieval class in the fetch_tl.py and returns the tier the ship has in the Azur Lane Community Tier List
+    def getTier(self):
+        tlInfo = infoRetrieval(self.name, "./tierlist/tierList.json")
+        return tlInfo.getTier()
+
+    
+    #Extra functions made to define the color they must have on the discord embed.
     def getColor(self):
         if self.rarity == "Ultra Rare" or self.rarity == "Decisive":
             return 0xe92063
@@ -158,7 +190,8 @@ class AzurLaneTB:
             return 0xffd900
         elif 'DeepSkyBlue' in color:
             return 0x85ceea
-    
+        
+    #Function to get the real image link from the srcset in the Wiki images.
     def fixSource(self, src):
         splitted = src.split(' ')
         splitted = splitted[len(splitted)-2].replace('thumb/', '')
