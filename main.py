@@ -1,15 +1,15 @@
 from discord.ext import commands
-from TB import AzurLaneTB
-import discord
-import logging
-from datetime import datetime
-import asyncio
 import os
 import json
+import discord
+import logging
+import asyncio
+from datetime import datetime
+
 
 client = commands.Bot(command_prefix='tb!', intents=discord.Intents.all())
 
-discord.utils.setup_logging(level=logging.INFO, root=False)
+#discord.utils.setup_logging(level=logging.INFO, root=False)
 
 
 @client.event

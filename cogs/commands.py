@@ -1,6 +1,6 @@
 import discord
 import json
-from TB import AzurLaneTB
+from tb import AzurLaneTB
 from datetime import datetime
 from discord import app_commands
 from discord.ext import commands

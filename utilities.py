@@ -1,5 +1,5 @@
 import discord
-from TB import AzurLaneTB
+from tb import AzurLaneTB
 from discord.ext import commands
 
 # Color headers for the terminal logging.
